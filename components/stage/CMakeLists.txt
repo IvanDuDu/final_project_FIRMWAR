@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS
+        "stage_machine.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        driver
+        json
+        nvs_flash
+        bluetooth
+        sensors
+        actuators
+        network
+        storage
+        telemetry
+        alert
+        freertos
+)

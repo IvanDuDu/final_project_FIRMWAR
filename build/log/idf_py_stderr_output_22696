@@ -1,0 +1,8 @@
+CMake Error at D:/After_the_April/espTools/v5.4.1/esp-idf/tools/cmake/project.cmake:472 (message):
+  Directory specified in EXTRA_COMPONENT_DIRS doesn't exist:
+  C:/Users/ADMIN/components
+Call Stack (most recent call first):
+  D:/After_the_April/espTools/v5.4.1/esp-idf/tools/cmake/project.cmake:556 (__project_init)
+  CMakeLists.txt:13 (project)
+
+

@@ -1,0 +1,17 @@
+idf_component_register(
+    SRCS
+        "wifi_manager.c"
+        "sim_manager.c"
+        "mqtt_client_wrap.c"
+        "server_connect.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        esp_wifi
+        esp_event
+        esp_netif
+        mqtt
+        driver
+        storage
+)

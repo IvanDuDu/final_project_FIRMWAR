@@ -1,0 +1,13 @@
+idf_component_register(
+    SRCS
+        "telemetry_engine.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        json
+        network
+        storage
+        actuators
+        freertos
+)

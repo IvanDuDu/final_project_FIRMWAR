@@ -1,0 +1,13 @@
+idf_component_register(
+    SRCS
+        "alert_manager.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        json
+        network
+        storage
+        sensors
+        freertos
+)

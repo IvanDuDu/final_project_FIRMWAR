@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS
+        "sensors.c"
+        "sensor_manager.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        driver
+        esp_timer
+        freertos
+)

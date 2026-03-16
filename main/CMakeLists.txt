@@ -1,0 +1,16 @@
+idf_component_register(
+    SRCS
+        "main.c"
+    INCLUDE_DIRS
+        "."
+    REQUIRES
+        globals
+        bluetooth
+        sensors
+        actuators
+        network
+        storage
+        telemetry
+        alert
+        stage
+)
