@@ -1,0 +1,5 @@
+/build
+sdkconfig
+sdkconfig.*
+KEY.h
+CMakeLists.txt

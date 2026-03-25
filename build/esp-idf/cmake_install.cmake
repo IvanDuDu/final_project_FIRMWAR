@@ -579,12 +579,12 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/ADMIN/final_project/build/esp-idf/sensors/cmake_install.cmake")
+  include("C:/Users/ADMIN/final_project/build/esp-idf/telemetry/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/ADMIN/final_project/build/esp-idf/telemetry/cmake_install.cmake")
+  include("C:/Users/ADMIN/final_project/build/esp-idf/sensors/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)

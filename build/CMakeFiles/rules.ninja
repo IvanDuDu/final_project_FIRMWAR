@@ -1943,25 +1943,6 @@ rule C_STATIC_LIBRARY_LINKER____idf_bluetooth_
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER____idf_sensors_unscanned_
-  depfile = $DEP_FILE
-  deps = gcc
-  command = ccache ${LAUNCHER}${CODE_CHECK}D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-gcc.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
-  description = Building C object $out
-
-
-#############################################
-# Rule for linking C static library.
-
-rule C_STATIC_LIBRARY_LINKER____idf_sensors_
-  command = C:\WINDOWS\system32\cmd.exe /C "$PRE_LINK && D:\After_the_April\espExpress\tools\cmake\3.30.2\bin\cmake.exe -E rm -f $TARGET_FILE && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ar.exe qc $TARGET_FILE $LINK_FLAGS $in && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ranlib.exe $TARGET_FILE && $POST_BUILD"
-  description = Linking C static library $TARGET_FILE
-  restat = $RESTAT
-
-
-#############################################
-# Rule for compiling C files.
-
 rule C_COMPILER____idf_telemetry_unscanned_
   depfile = $DEP_FILE
   deps = gcc
@@ -1973,6 +1954,25 @@ rule C_COMPILER____idf_telemetry_unscanned_
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER____idf_telemetry_
+  command = C:\WINDOWS\system32\cmd.exe /C "$PRE_LINK && D:\After_the_April\espExpress\tools\cmake\3.30.2\bin\cmake.exe -E rm -f $TARGET_FILE && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ar.exe qc $TARGET_FILE $LINK_FLAGS $in && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ranlib.exe $TARGET_FILE && $POST_BUILD"
+  description = Linking C static library $TARGET_FILE
+  restat = $RESTAT
+
+
+#############################################
+# Rule for compiling C files.
+
+rule C_COMPILER____idf_sensors_unscanned_
+  depfile = $DEP_FILE
+  deps = gcc
+  command = ccache ${LAUNCHER}${CODE_CHECK}D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-gcc.exe $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building C object $out
+
+
+#############################################
+# Rule for linking C static library.
+
+rule C_STATIC_LIBRARY_LINKER____idf_sensors_
   command = C:\WINDOWS\system32\cmd.exe /C "$PRE_LINK && D:\After_the_April\espExpress\tools\cmake\3.30.2\bin\cmake.exe -E rm -f $TARGET_FILE && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ar.exe qc $TARGET_FILE $LINK_FLAGS $in && D:\After_the_April\espExpress\tools\xtensa-esp-elf\esp-14.2.0_20241119\xtensa-esp-elf\bin\xtensa-esp32s3-elf-ranlib.exe $TARGET_FILE && $POST_BUILD"
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT

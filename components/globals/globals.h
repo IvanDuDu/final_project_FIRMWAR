@@ -9,15 +9,16 @@
 // ─────────────────────────────────────────────
 //  HARDWARE PIN DEFINITIONS
 // ─────────────────────────────────────────────
-#define PIN_FAN_PWM         6
-#define PIN_UV_LED          7
+#define PIN_FAN_PWM         10
+#define PIN_UV_LED          11
 #define PIN_DOOR_SENSOR     8
-#define PIN_MPU_INT         9
+#define PIN_MPU_INT         40
 
 #define I2C1_SDA            21
-#define I2C1_SCL            22
-#define I2C2_SDA            21      // MPU6050 on separate I2C bus instance
-#define I2C2_SCL            22
+#define I2C1_SCL            47
+#define I2C2_SDA            41      // MPU6050 on separate I2C bus instance
+#define I2C2_SCL            42
+
 
 #define I2C_PORT_BUS1       I2C_NUM_0
 #define I2C_PORT_BUS2       I2C_NUM_1
@@ -30,7 +31,7 @@
 #define GY906_I2C_ADDR      0x5A
 #define DS3231_I2C_ADDR     0x68
 #define MPU6050_I2C_ADDR    0x68    // on I2C_BUS2 — no conflict
-#define GPS_I2C_ADDR        0x00    // placeholder, no module yet
+
 
 // ─────────────────────────────────────────────
 //  LEDC / PWM
@@ -83,7 +84,7 @@
 #define MAX_SHIPPER_ID_LEN      32
 #define MAX_ROUTE_HISTORY       16
 #define MAX_TELEMETRY_BUFFER    32
-#define MAX_SSID_LEN            64
+#define MAX_SSID_LEN            32
 #define MAX_PASS_LEN            64
 #define MAX_PRODUCT_TYPE_LEN    32
 #define MAX_LOCATION_LEN        64

@@ -89,8 +89,8 @@ $<TARGET_FILE:__idf_storage>
 $<TARGET_FILE:__idf_network>
 $<TARGET_FILE:__idf_actuators>
 $<TARGET_FILE:__idf_bluetooth>
-$<TARGET_FILE:__idf_sensors>
 $<TARGET_FILE:__idf_telemetry>
+$<TARGET_FILE:__idf_sensors>
 $<TARGET_FILE:__idf_alert>
 $<TARGET_FILE:__idf_stage>
 $<TARGET_FILE:__idf_main>

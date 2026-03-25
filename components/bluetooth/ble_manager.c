@@ -4,7 +4,6 @@
 #include "globals.h"
 
 #include "esp_log.h"
-#include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
@@ -222,12 +221,12 @@ static void nimble_host_task(void *param)
 // ─────────────────────────────────────────────
 esp_err_t ble_manager_init(void)
 {
-    esp_err_t ret = esp_nimble_hci_and_controller_init();
+    esp_err_t ret = nimble_port_init();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "NimBLE HCI init failed: %d", ret);
         return ret;
     }
-    nimble_port_init();
+    
 
     ble_hs_cfg.sync_cb  = ble_on_sync;
     ble_hs_cfg.reset_cb = ble_on_reset;

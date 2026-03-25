@@ -67,8 +67,31 @@ esp_err_t ds3231_init(void);
 esp_err_t ds3231_get_timestamp(char *buf, size_t len);
 
 // ─────────────────────────────────────────────
-//  GPS  (I2C Bus 1, addr 0x00 — placeholder)
-//  Module not yet installed; functions return safe defaults.
+//  GPS — Quectel EC800K built-in GNSS
+//  Giao tiếp qua UART2 (shared với SIM module).
+//  Dùng AT+QGPS và AT+QGPSLOC=2 (decimal degrees).
+//
+//  Lưu ý: gps_init() phải gọi SAU sim_manager_init()
+//  vì UART2 được khởi tạo bởi sim_manager.
 // ─────────────────────────────────────────────
+
+/**
+ * @brief  Bật GNSS engine của EC800K.
+ *         Gửi: AT+QGPSCFG="outport","none"
+ *              AT+QGPSCFG="nmeasrc",1
+ *              AT+QGPS=1
+ *         Nếu GNSS đã đang chạy, hàm vẫn trả về ESP_OK.
+ *         Phải gọi sau sim_manager_init().
+ */
 esp_err_t gps_init(void);
+
+/**
+ * @brief  Đọc vị trí GPS hiện tại qua AT+QGPSLOC=2.
+ *
+ * @param  latitude   Vĩ độ (decimal degrees, ±90).
+ * @param  longitude  Kinh độ (decimal degrees, ±180).
+ * @return ESP_OK     Fix thành công, latitude/longitude đã được điền.
+ *         ESP_ERR_TIMEOUT  Chưa có GPS fix (CME ERROR 516) — caller nên
+ *                          dùng giá trị 0.0 và đánh dấu gps_valid=false.
+ */
 esp_err_t gps_read_position(double *latitude, double *longitude);

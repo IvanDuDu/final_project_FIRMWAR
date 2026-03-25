@@ -89,8 +89,8 @@ C:/Users/ADMIN/final_project/build/esp-idf/storage/libstorage.a
 C:/Users/ADMIN/final_project/build/esp-idf/network/libnetwork.a
 C:/Users/ADMIN/final_project/build/esp-idf/actuators/libactuators.a
 C:/Users/ADMIN/final_project/build/esp-idf/bluetooth/libbluetooth.a
-C:/Users/ADMIN/final_project/build/esp-idf/sensors/libsensors.a
 C:/Users/ADMIN/final_project/build/esp-idf/telemetry/libtelemetry.a
+C:/Users/ADMIN/final_project/build/esp-idf/sensors/libsensors.a
 C:/Users/ADMIN/final_project/build/esp-idf/alert/libalert.a
 C:/Users/ADMIN/final_project/build/esp-idf/stage/libstage.a
 C:/Users/ADMIN/final_project/build/esp-idf/main/libmain.a

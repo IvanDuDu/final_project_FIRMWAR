@@ -2,6 +2,7 @@
 #include "globals.h"
 
 #include "driver/i2c.h"
+#include "driver/uart.h"
 #include "esp_log.h"
 #include <string.h>
 #include <math.h>
@@ -337,17 +338,173 @@ esp_err_t ds3231_get_timestamp(char *buf, size_t len)
 }
 
 // ═════════════════════════════════════════════
-//  GPS  —  placeholder (module not installed)
+//  GPS — Quectel EC800K built-in GNSS
+//
+//  Giao tiếp qua cùng UART2 với moduleSIM.
+//  Chuỗi AT command sử dụng:
+//
+//  gps_init():
+//    AT+QGPSCFG="outport","none"   — tắt output NMEA tự động ra cổng
+//    AT+QGPSCFG="nmeasrc",1        — cho phép đọc NMEA qua AT+QGPSGNMEA
+//    AT+QGPS=1                     — bật GNSS engine (standalone mode)
+//
+//  gps_read_position():
+//    AT+QGPSLOC=2                  — lấy vị trí (format=2: decimal degrees)
+//    Response: +QGPSLOC: <UTC>,<lat>,<lon>,<hdop>,<alt>,<fix>,<cog>,<spkm>,<spkn>,<date>,<nsat>
 // ═════════════════════════════════════════════
+
+// UART2 shared with SIM module — use the same port/pins
+#define GPS_UART_PORT   UART_NUM_2
+#define GPS_CMD_TIMEOUT 3000    // ms — QGPSLOC có thể mất vài giây
+#define GPS_BUF_SIZE    512
+
+static bool s_gps_ready = false;
+
+// Tái sử dụng helper gửi AT command đơn giản (không depend sim_manager)
+static esp_err_t gps_send_at(const char *cmd, const char *expect,
+                              char *resp_buf, size_t resp_len, int timeout_ms)
+{
+    uart_flush_input(GPS_UART_PORT);
+    uart_write_bytes(GPS_UART_PORT, cmd, strlen(cmd));
+    uart_write_bytes(GPS_UART_PORT, "\r\n", 2);
+    ESP_LOGD(TAG, "GPS>> %s", cmd);
+
+    if (!expect) return ESP_OK;
+
+    char buf[GPS_BUF_SIZE] = {0};
+    int  total   = 0;
+    int  elapsed = 0;
+
+    while (elapsed < timeout_ms) {
+        int n = uart_read_bytes(GPS_UART_PORT,
+                                (uint8_t *)(buf + total),
+                                sizeof(buf) - total - 1,
+                                pdMS_TO_TICKS(100));
+        if (n > 0) total += n;
+        buf[total] = '\0';
+
+        if (strstr(buf, expect)) {
+            if (resp_buf && resp_len > 0) {
+                strlcpy(resp_buf, buf, resp_len);
+            }
+            ESP_LOGD(TAG, "GPS<< %s", buf);
+            return ESP_OK;
+        }
+        // Error responses
+        if (strstr(buf, "+CME ERROR") || strstr(buf, "ERROR")) {
+            ESP_LOGW(TAG, "GPS AT error: %s", buf);
+            return ESP_FAIL;
+        }
+        elapsed += 100;
+    }
+    ESP_LOGW(TAG, "GPS AT timeout: %s", cmd);
+    return ESP_ERR_TIMEOUT;
+}
+
+// Parse +QGPSLOC response (format=2, decimal degrees)
+// Response: +QGPSLOC: <UTC>,<lat>,<lon>,<hdop>,<alt>,<fix>,<cog>,<spkm>,<spkn>,<date>,<nsat>
+static esp_err_t parse_qgpsloc(const char *resp, double *lat, double *lon)
+{
+    const char *prefix = "+QGPSLOC:";
+    char *p = strstr(resp, prefix);
+    if (!p) return ESP_FAIL;
+    p += strlen(prefix);
+
+    // Skip leading space
+    while (*p == ' ') p++;
+
+    // Fields: UTC, lat, lon, ...
+    double utc_val, lat_val, lon_val;
+    // sscanf with %*[^,],%lf,%lf would skip first field
+    // safer: find first comma (UTC), then parse lat, lon
+    char *comma1 = strchr(p, ',');
+    if (!comma1) return ESP_FAIL;
+    comma1++;  // skip past UTC field
+
+    if (sscanf(comma1, "%lf,%lf", &lat_val, &lon_val) != 2)
+        return ESP_FAIL;
+
+    *lat = lat_val;
+    *lon = lon_val;
+    return ESP_OK;
+}
+
 esp_err_t gps_init(void)
 {
-    ESP_LOGW(TAG, "GPS module not installed — address 0x00 placeholder");
+    // UART2 đã được khởi tạo bởi sim_manager_init().
+    // Chỉ cần gửi chuỗi AT config GNSS.
+
+    ESP_LOGI(TAG, "Initialising EC800K GNSS...");
+
+    // 1. Tắt NMEA auto-output ra cổng (tránh rác trong UART buffer)
+    esp_err_t ret = gps_send_at("AT+QGPSCFG=\"outport\",\"none\"",
+                                 "OK", NULL, 0, 2000);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "QGPSCFG outport failed (may already be set): %d", ret);
+    }
+
+    // 2. Bật mode đọc NMEA qua AT+QGPSGNMEA
+    ret = gps_send_at("AT+QGPSCFG=\"nmeasrc\",1",
+                      "OK", NULL, 0, 2000);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "QGPSCFG nmeasrc failed: %d", ret);
+    }
+
+    // 3. Bật GNSS engine — standalone mode
+    //    Nếu đã bật trước đó sẽ trả về error, không sao
+    ret = gps_send_at("AT+QGPS=1", "OK", NULL, 0, 3000);
+    if (ret != ESP_OK) {
+        // Kiểm tra xem đã bật chưa
+        char resp[GPS_BUF_SIZE];
+        gps_send_at("AT+QGPS?", "+QGPS:", resp, sizeof(resp), 2000);
+        if (strstr(resp, "+QGPS: 1")) {
+            ESP_LOGI(TAG, "GNSS engine already running");
+            ret = ESP_OK;
+        } else {
+            ESP_LOGE(TAG, "Cannot start GNSS engine");
+            return ret;
+        }
+    }
+
+    s_gps_ready = true;
+    ESP_LOGI(TAG, "EC800K GNSS engine started");
     return ESP_OK;
 }
 
 esp_err_t gps_read_position(double *latitude, double *longitude)
 {
+    // Safe defaults
     *latitude  = 0.0;
     *longitude = 0.0;
-    return ESP_OK;  // Return safe defaults silently
+
+    if (!s_gps_ready) {
+        ESP_LOGW(TAG, "GPS not initialised");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    char resp[GPS_BUF_SIZE] = {0};
+
+    // AT+QGPSLOC=2  — format 2 = decimal degrees (±DD.DDDDD)
+    // Nếu chưa có fix sẽ trả về +CME ERROR: 516
+    esp_err_t ret = gps_send_at("AT+QGPSLOC=2",
+                                 "+QGPSLOC:", resp, sizeof(resp),
+                                 GPS_CMD_TIMEOUT);
+    if (ret != ESP_OK) {
+        // +CME ERROR: 516 = no fix yet, không phải lỗi cứng
+        if (strstr(resp, "516")) {
+            ESP_LOGD(TAG, "GPS: no fix yet (error 516)");
+        } else {
+            ESP_LOGW(TAG, "GPS read failed: %d", ret);
+        }
+        return ret;
+    }
+
+    ret = parse_qgpsloc(resp, latitude, longitude);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "GPS parse failed, raw: %s", resp);
+        return ret;
+    }
+
+    ESP_LOGD(TAG, "GPS fix: lat=%.6f lon=%.6f", *latitude, *longitude);
+    return ESP_OK;
 }
