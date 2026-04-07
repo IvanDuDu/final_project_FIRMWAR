@@ -7,6 +7,8 @@
 volatile bool           g_door_enable   = false;
 volatile bool           g_fan_enable    = false;
 volatile bool           g_uv_enable     = false;
+volatile bool           g_path_led_active = false;
+volatile bool           g_dest_led_active = false;
 volatile app_stage_t    g_stage         = STAGE_SETUP;
 
 container_config_t      g_config        = {0};

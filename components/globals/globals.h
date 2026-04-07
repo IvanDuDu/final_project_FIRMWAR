@@ -19,6 +19,9 @@
 #define I2C2_SDA            41      // MPU6050 on separate I2C bus instance
 #define I2C2_SCL            42
 
+#define PIN_LED_PATH        9    // Green: intermediate path node
+#define PIN_LED_DEST        12    // Red:   destination container
+
 
 #define I2C_PORT_BUS1       I2C_NUM_0
 #define I2C_PORT_BUS2       I2C_NUM_1
@@ -89,6 +92,12 @@
 #define MAX_PRODUCT_TYPE_LEN    32
 #define MAX_LOCATION_LEN        64
 #define MAX_JSON_BUF            1024
+#define ESPNOW_TTL_DEFAULT      8
+#define ESPNOW_CHANNEL          1
+#define UDP_CTRL_PORT           5555
+#define UDP_DISC_PORT           5556
+#define UDP_BUF_SIZE            512
+#define PATH_LED_DURATION_MS    (5 * 60 * 1000)
 
 // ─────────────────────────────────────────────
 //  STAGE ENUM
@@ -160,6 +169,8 @@ extern SemaphoreHandle_t    g_sem_collision;
 extern SemaphoreHandle_t    g_mutex_telemetry;
 extern SemaphoreHandle_t    g_mutex_globals;
 extern EventGroupHandle_t   g_evt_network;
+extern volatile bool  g_path_led_active;
+extern volatile bool  g_dest_led_active;
 
 // Network event bits
 #define NET_EVT_WIFI_READY  BIT0

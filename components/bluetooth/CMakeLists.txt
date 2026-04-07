@@ -13,6 +13,8 @@ idf_component_register(
         storage
         network
         actuators
+        esp_wifi
+        local_network
         
         
 )

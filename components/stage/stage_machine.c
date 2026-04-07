@@ -10,7 +10,8 @@
 #include "actuators.h"
 #include "sensors.h"       // ds3231_get_timestamp
 #include "sd_manager.h"    // sd_telemetry_read_all, sd_telemetry_clear
-
+#include "espnow_manager.h"
+#include "udp_control.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "cJSON.h"
@@ -26,6 +27,7 @@ static TaskHandle_t h_sensor     = NULL;
 static TaskHandle_t h_telem_send = NULL;
 static TaskHandle_t h_alert      = NULL;
 static TaskHandle_t h_heartbeat  = NULL;
+static TaskHandle_t h_led_timer  = NULL;
 
 // ─────────────────────────────────────────────
 //  Heartbeat task
@@ -55,7 +57,9 @@ static void stage2_start_tasks(void)
     xTaskCreatePinnedToCore(task_sensor_read,    "sensor_read",   4096, NULL, 4, &h_sensor,     1);
     xTaskCreatePinnedToCore(task_telemetry_send, "telem_send",    3072, NULL, 3, &h_telem_send, 1);
     xTaskCreatePinnedToCore(task_alert_handler,  "alert_handler", 2048, NULL, 6, &h_alert,      0);
+    xTaskCreatePinnedToCore(task_led_timer, "led_timer", 2048, NULL, 2, &h_led_timer, 0);
     xTaskCreatePinnedToCore(task_heartbeat,      "heartbeat",     2048, NULL, 1, &h_heartbeat,  1);
+
     ESP_LOGI(TAG, "Stage 2 tasks spawned");
 }
 
@@ -64,6 +68,7 @@ static void stage2_stop_tasks(void)
     if (h_sensor)     { vTaskDelete(h_sensor);     h_sensor     = NULL; }
     if (h_telem_send) { vTaskDelete(h_telem_send); h_telem_send = NULL; }
     if (h_alert)      { vTaskDelete(h_alert);      h_alert      = NULL; }
+    if (h_led_timer)  { vTaskDelete(h_led_timer);  h_led_timer  = NULL; }
     if (h_heartbeat)  { vTaskDelete(h_heartbeat);  h_heartbeat  = NULL; }
     ESP_LOGI(TAG, "Stage 2 tasks stopped");
 }
@@ -162,10 +167,22 @@ static void run_stage2(void)
     }
 
     // Kết nối server
-    esp_err_t ret = server_connect();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Server connect failed, will retry in background");
-    }
+        esp_err_t ret = server_connect();
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Server connect failed, will retry in background");
+        }
+
+        // Initialise ESP-NOW for pathfinding (requires WiFi radio to be up)
+        if (espnow_manager_init() != ESP_OK) {
+            ESP_LOGW(TAG, "ESP-NOW init failed — pathfind unavailable");
+        }
+
+        // If we are in sea/WiFi mode, start the UDP LAN control service
+        if (on_board) {
+            if (udp_control_start() != ESP_OK) {
+                ESP_LOGW(TAG, "UDP control start failed");
+            }
+        }
 
     // Spawn các worker tasks
     stage2_start_tasks();
@@ -182,11 +199,18 @@ static void run_stage2(void)
 
         if (current_stage == STAGE_RECEIVE) break;
 
-        if (new_on_board != on_board) {
-            ESP_LOGI(TAG, "Transport mode changed — updating network");
-            server_connect_update_transport(new_on_board);
-            on_board = new_on_board;
-        }
+            if (new_on_board != on_board) {
+                ESP_LOGI(TAG, "Transport mode changed — updating network");
+                server_connect_update_transport(new_on_board);
+                on_board = new_on_board;
+
+                // UDP control is only useful on WiFi (on-board)
+                if (on_board) {
+                    udp_control_start();
+                } else {
+                    udp_control_stop();
+                }
+            }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
@@ -290,6 +314,7 @@ static void run_stage3(void)
         free(payload);
         ESP_LOGI(TAG, "Published /received: total_loss=%.3fkg", total_loss);
     }
+    udp_control_stop();
 
     // ── Ngắt kết nối server ──
     server_disconnect();

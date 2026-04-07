@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "nvs_manager.h"        // storage component
 #include "mqtt_client_wrap.h"   // network component
+#include "espnow_manager.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -20,6 +21,7 @@ static void handle_cmd_01(cJSON *des);   // Shipper take-charge
 static void handle_cmd_02(cJSON *des);   // Customer confirm received
 static void handle_cmd_03(cJSON *des);   // Shipper toggle fan
 static void handle_cmd_04(cJSON *des);   // Shipper toggle UV
+static void handle_cmd_05(cJSON *des); // Shipper pathfind
 static void handle_cmd_08(cJSON *des);   // Shipper set WiFi credentials
 
 // ─────────────────────────────────────────────
@@ -51,6 +53,7 @@ void ble_handler_process(const char *json_str)
     else if (strcmp(cmd, "03") == 0) handle_cmd_03(des_item);
     else if (strcmp(cmd, "04") == 0) handle_cmd_04(des_item);
     else if (strcmp(cmd, "08") == 0) handle_cmd_08(des_item);
+    else if (strcmp(cmd, "05") == 0) handle_cmd_05(des_item);
     else ESP_LOGW(TAG, "Unknown command: %s", cmd);
 
     cJSON_Delete(root);
@@ -232,6 +235,26 @@ static void handle_cmd_04(cJSON *des)
     uv_set(new_val);
 
     ESP_LOGI(TAG, "CMD04: uvEnable=%d", new_val);
+}
+
+// ─────────────────────────────────────────────
+//  CMD 05 — Shipper pathfind request
+// ─────────────────────────────────────────────
+static void handle_cmd_05(cJSON *des)
+{
+    if (!des) { ESP_LOGW(TAG, "CMD05: missing des"); return; }
+ 
+    cJSON *item = cJSON_GetObjectItem(des, "targetId");
+    if (!item || !cJSON_IsString(item)) {
+        ESP_LOGW(TAG, "CMD05: missing targetId");
+        return;
+    }
+ 
+    const char *target = item->valuestring;
+    ESP_LOGI(TAG, "CMD05: pathfind → %s", target);
+ 
+    // Kick off ESP-NOW flood from this node
+    espnow_pathfind_start(target);
 }
 
 // ─────────────────────────────────────────────
